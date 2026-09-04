@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <title>Bon {{ "%06d"|format(r.sale.id) }}</title>
+  <style>
+    body { font-family: "Segoe UI", system-ui, sans-serif; background: #f2f4f7; margin: 0; padding: 30px; }
+    a { color: #1e8e5a; }
+    .receipt { font-family: Consolas, "Courier New", monospace; font-size: 13px; white-space: pre; line-height: 1.45;
+               background: #fffdf5; border: 1px solid #eee; padding: 16px 18px; width: 320px; margin-top: 14px; }
+    @media print { body { background: #fff; padding: 0; } a { display: none; } .receipt { border: none; } }
+  </style>
+</head>
+<body>
+<a href="/admin">&larr; Terug naar beheer</a>
+{%- set W = 40 -%}
+{%- macro eur(c) -%}€ {{ "%.2f"|format(c / 100) | replace(".", ",") }}{%- endmacro -%}
+{%- macro pad(l, rr) -%}{{ l }}{{ " " * (W - (l|length) - (rr|length)) if (W - (l|length) - (rr|length)) > 0 else " " }}{{ rr }}{%- endmacro -%}
+{%- macro center(s) -%}{{ " " * ((W - (s|length)) // 2) }}{{ s }}{%- endmacro -%}
+<div class="receipt">{{ center(r.store.name|upper) }}
+{{ center(r.store.address) }}
+{{ center("KvK " ~ r.store.kvk ~ "  BTW " ~ r.store.btw_nummer) }}
+{{ "-" * W }}
+{% for l in r.lines -%}
+{{ pad((l.qty ~ " x " ~ l.name if l.qty > 1 else l.name)[:30], eur(l.qty * l.unit_price_cents)) }}
+{% if l.statiegeld_cents %}{{ pad("   statiegeld " ~ l.qty ~ " x " ~ eur(l.statiegeld_cents), eur(l.qty * l.statiegeld_cents)) }}
+{% endif -%}
+{% endfor -%}
+{{ "-" * W }}
+{% if r.statiegeld_cents %}{{ pad("Artikelen", eur(r.goods_cents)) }}
+{{ pad("Statiegeld (geen btw)", eur(r.statiegeld_cents)) }}
+{% endif -%}
+{{ pad("TOTAAL", eur(r.total_cents)) }}
+{{ pad("Pin", eur(r.total_cents)) }}
+
+{{ pad("BTW   grondslag", "btw") }}
+{% for b in r.btw -%}
+{{ pad(("%2d"|format(b.pct)) ~ "%   " ~ eur(b.net_cents), eur(b.btw_cents)) }}
+{% endfor -%}
+{{ "-" * W }}
+{{ pad("Bon " ~ ("%06d"|format(r.sale.id)), r.sale.ts) }}
+{{ r.sale.payment_ref or "" }}
+
+{{ center("Bedankt voor uw aankoop") }}</div>
+</body>
+</html>

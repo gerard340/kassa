@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Kassa</title>
+  <link rel="stylesheet" href="/static/css/kassa.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ======================= linkerdeel: catalogus ======================= -->
+    <section class="catalog">
+      <header class="topbar">
+        <button id="btn-back" class="btn btn-ghost" hidden>&#8592; Categorie&euml;n</button>
+        <h1 id="store-name">Kassa</h1>
+        <div class="search">
+          <input id="search" type="search" placeholder="Zoek product of barcode&hellip;" autocomplete="off">
+        </div>
+        <div id="clock" class="clock"></div>
+      </header>
+
+      <div id="breadcrumb" class="breadcrumb" hidden></div>
+      <div id="subcats" class="chips" hidden></div>
+
+      <div id="grid" class="grid"></div>
+    </section>
+
+    <!-- ======================= rechterdeel: winkelwagen ======================= -->
+    <aside class="cart">
+      <header class="cart-head">
+        <h2>Bon</h2>
+        <span id="cart-count" class="badge">0 artikelen</span>
+      </header>
+
+      <div id="cart-lines" class="cart-lines">
+        <div class="cart-empty">Scan een product of kies een categorie.</div>
+      </div>
+
+      <div class="totals">
+        <div class="row"><span>Artikelen</span><span id="t-goods">&euro; 0,00</span></div>
+        <div class="row" id="row-statiegeld" hidden><span>Statiegeld</span><span id="t-statiegeld">&euro; 0,00</span></div>
+        <div class="row small" id="row-btw"></div>
+        <div class="row total"><span>Totaal</span><span id="t-total">&euro; 0,00</span></div>
+      </div>
+
+      <div class="cart-actions">
+        <button id="btn-clear" class="btn btn-ghost" disabled>Leegmaken</button>
+        <button id="btn-pay" class="btn btn-pay" disabled>Pinnen <span id="pay-amount"></span></button>
+      </div>
+
+      <details class="scan-sim">
+        <summary>Scanner-simulatie</summary>
+        <p class="hint">Een echte scanner typt de barcode + Enter. Typ hier een EAN of kies er een.</p>
+        <div class="sim-row">
+          <input id="sim-ean" type="text" placeholder="EAN-13" inputmode="numeric">
+          <button id="sim-scan" class="btn btn-small">Scan</button>
+        </div>
+        <select id="sim-select"></select>
+        <p class="hint"><a href="/admin" target="_blank">Beheer (cloud-portaal)</a></p>
+      </details>
+    </aside>
+  </div>
+
+  <!-- ======================= modals ======================= -->
+  <div id="modal-age" class="overlay" hidden>
+    <div class="modal">
+      <div class="modal-icon warn">18+</div>
+      <h3>Leeftijdscontrole</h3>
+      <p>Dit product mag alleen aan klanten van 18 jaar of ouder worden verkocht.<br>Is de klant 18 jaar of ouder?</p>
+      <div class="modal-actions">
+        <button id="age-no" class="btn btn-ghost">Nee, weigeren</button>
+        <button id="age-yes" class="btn btn-primary">Ja, ouder dan 18</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-pay" class="overlay" hidden>
+    <div class="modal modal-pay">
+      <div id="pay-step-wait">
+        <div class="terminal">
+          <div class="terminal-screen">
+            <div id="term-amount" class="term-amount"></div>
+            <div id="term-msg" class="term-msg">Verbinden met terminal&hellip;</div>
+            <div class="spinner"></div>
+          </div>
+          <div class="terminal-label">Pinterminal (gesimuleerd)</div>
+        </div>
+        <div class="modal-actions">
+          <button id="pay-cancel" class="btn btn-ghost">Annuleren</button>
+        </div>
+      </div>
+
+      <div id="pay-step-done" hidden>
+        <div class="modal-icon ok">&#10003;</div>
+        <h3>Betaling geslaagd</h3>
+        <div id="receipt" class="receipt"></div>
+        <div class="modal-actions">
+          <button id="btn-print" class="btn btn-ghost">Bon afdrukken</button>
+          <button id="btn-new" class="btn btn-primary">Volgende klant</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="/static/js/kassa.js"></script>
+</body>
+</html>

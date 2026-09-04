@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beheer - {{ store.name }}</title>
+  <style>
+    :root { --line:#e2e6ec; --muted:#6b7684; --accent:#1e8e5a; }
+    body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0; background: #f2f4f7; color: #1c2430; }
+    header { background: #fff; border-bottom: 1px solid var(--line); padding: 14px 28px; display: flex; gap: 24px; align-items: center; }
+    header h1 { font-size: 18px; margin: 0; }
+    header nav a { margin-right: 16px; color: var(--accent); text-decoration: none; font-weight: 600; }
+    header .poc { margin-left: auto; color: var(--muted); font-size: 13px; }
+    main { padding: 24px 28px; max-width: 1200px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .card { background: #fff; border-radius: 12px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    .card .k { color: var(--muted); font-size: 13px; }
+    .card .v { font-size: 26px; font-weight: 700; margin-top: 4px; }
+    section { background: #fff; border-radius: 12px; padding: 18px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    h2 { font-size: 16px; margin: 0 0 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tr.low td { background: #fff7e6; }
+    tr.hidden td { color: var(--muted); font-style: italic; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; background: #eef2f6; }
+    .pill.low { background: #ffe1b0; color: #7a4a00; }
+    .pill.out { background: #fde0de; color: #8a1f1b; }
+    .muted { color: var(--muted); }
+    .scroll { max-height: 520px; overflow: auto; }
+    .todo { color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>{{ store.name }} &middot; Beheer</h1>
+  <nav><a href="#verkopen">Verkopen</a><a href="#voorraad">Voorraad</a><a href="/" target="_blank">Kassa openen</a></nav>
+  <span class="poc">POC - cloud-portaal (later: rapporten, Excel-import, categoriebeheer)</span>
+</header>
+<main>
+  <div class="cards">
+    <div class="card"><div class="k">Bonnen vandaag</div><div class="v">{{ today.n }}</div></div>
+    <div class="card"><div class="k">Omzet vandaag (incl. btw)</div><div class="v">&euro; {{ "%.2f"|format(today.total / 100) | replace(".", ",") }}</div></div>
+    <div class="card"><div class="k">Artikelen onder minimumvoorraad</div><div class="v">{{ products | selectattr("category_id") | selectattr("stock", "le", 5) | list | length }}</div></div>
+    <div class="card"><div class="k">Artikelen in assortiment</div><div class="v">{{ products | selectattr("category_id") | list | length }}</div></div>
+  </div>
+
+  <section id="verkopen">
+    <h2>Laatste verkopen</h2>
+    {% if not sales %}<p class="muted">Nog geen verkopen. Reken iets af in de kassa.</p>{% endif %}
+    <table>
+      <tr><th>Bon</th><th>Tijd</th><th class="num">Artikelen</th><th>Betaling</th><th>Referentie</th><th class="num">Statiegeld</th><th class="num">Totaal</th></tr>
+      {% for s in sales %}
+      <tr>
+        <td><a href="/admin/sales/{{ s.id }}">{{ "%06d"|format(s.id) }}</a></td>
+        <td>{{ s.ts }}</td>
+        <td class="num">{{ s.item_count }}</td>
+        <td>{{ s.payment_method|upper }}</td>
+        <td class="muted">{{ s.payment_ref or "" }}</td>
+        <td class="num">{{ "%.2f"|format(s.statiegeld_cents / 100) | replace(".", ",") }}</td>
+        <td class="num"><b>{{ "%.2f"|format(s.total_cents / 100) | replace(".", ",") }}</b></td>
+      </tr>
+      {% endfor %}
+    </table>
+  </section>
+
+  <section>
+    <h2>Best verkocht</h2>
+    {% if not top_sellers %}<p class="muted">Nog geen gegevens.</p>{% endif %}
+    <table>
+      {% for t in top_sellers %}
+      <tr><td>{{ t.name }}</td><td class="num">{{ t.qty }} st</td><td class="num">&euro; {{ "%.2f"|format(t.revenue / 100) | replace(".", ",") }}</td></tr>
+      {% endfor %}
+    </table>
+  </section>
+
+  <section id="voorraad">
+    <h2>Voorraad <span class="todo">(later: bewerken, Excel-import/export)</span></h2>
+    <div class="scroll">
+    <table>
+      <tr><th>EAN</th><th>Product</th><th>Categorie</th><th class="num">Prijs</th><th class="num">Btw</th><th class="num">Statiegeld</th><th class="num">Voorraad</th><th></th></tr>
+      {% for p in products %}
+      <tr class="{{ 'low' if p.category_id and p.stock <= p.min_stock else '' }} {{ 'hidden' if not p.category_id else '' }}">
+        <td class="muted">{{ p.ean }}</td>
+        <td>{{ p.name }}{% if p.age_restricted %} <span class="pill">18+</span>{% endif %}</td>
+        <td>{% if p.category_id %}{{ p.cat_name }} &rsaquo; {{ p.sub_name }}{% else %}<span class="pill">geen categorie - niet zichtbaar in kassa</span>{% endif %}</td>
+        <td class="num">{{ "%.2f"|format(p.price_cents / 100) | replace(".", ",") }}</td>
+        <td class="num">{{ p.btw_pct }}%</td>
+        <td class="num">{% if p.statiegeld_cents %}{{ "%.2f"|format(p.statiegeld_cents / 100) | replace(".", ",") }}{% endif %}</td>
+        <td class="num">{{ p.stock }}</td>
+        <td>{% if p.stock <= 0 %}<span class="pill out">uitverkocht</span>{% elif p.stock <= p.min_stock %}<span class="pill low">bijbestellen</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+  </section>
+</main>
+</body>
+</html>
