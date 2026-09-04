@@ -1,0 +1,15 @@
+services:
+  kassa:
+    build: .
+    container_name: kassa
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data       # SQLite: producten, verkopen, voorraad
+    # Alleen lokaal bereikbaar; Caddy proxyt kassa.kiwi-ict.nl hiernaartoe
+    ports:
+      - "127.0.0.1:3004:3004"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
